@@ -1,0 +1,34 @@
+def apriori_custom(transactions, min_support=MIN_SUPPORT):
+    n = len(transactions)
+    if n == 0:
+        return {}
+    item_counts = Counter(item for basket in transactions for item in basket)
+    level = {frozenset([item]): count / n
+             for item, count in item_counts.items()
+             if count / n >= min_support}
+    all_frequent = dict(level)
+    k = 2
+    while level:
+        prev = sorted(level, key=lambda x: tuple(sorted(x)))
+        prev_set = set(level)
+        candidates = set()
+        for i in range(len(prev)):
+            for j in range(i + 1, len(prev)):
+                union = prev[i] | prev[j]
+                if len(union) != k:
+                    continue
+                if all(frozenset(sub) in prev_set
+                       for sub in itertools.combinations(union, k - 1)):
+                    candidates.add(union)
+        if not candidates:
+            break
+        counts = Counter()
+        for basket in transactions:
+            for candidate in candidates:
+                if candidate.issubset(basket):
+                    counts[candidate] += 1
+        level = {itemset: count / n for itemset, count in counts.items()
+                 if count / n >= min_support}
+        all_frequent.update(level)
+        k += 1
+    return all_frequent

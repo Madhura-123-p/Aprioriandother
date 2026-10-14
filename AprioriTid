@@ -1,0 +1,42 @@
+def aprioritid_custom(transactions, min_support=MIN_SUPPORT):
+    n = len(transactions)
+    if n == 0:
+        return {}
+    item_counts = Counter(item for basket in transactions for item in basket)
+    level = {frozenset([item]): count / n
+             for item, count in item_counts.items()
+             if count / n >= min_support}
+    all_frequent = dict(level)
+    # Cbar_1: for each transaction, store frequent singleton itemsets present.
+    cbar = [set(frozenset([item]) for item in basket if frozenset([item]) in level)
+            for basket in transactions]
+    k = 2
+    while level:
+        prev = sorted(level, key=lambda x: tuple(sorted(x)))
+        prev_set = set(level)
+        candidates = set()
+        for i in range(len(prev)):
+            for j in range(i + 1, len(prev)):
+                union = prev[i] | prev[j]
+                if len(union) == k and all(
+                    frozenset(sub) in prev_set
+                    for sub in itertools.combinations(union, k - 1)
+                ):
+                    candidates.add(union)
+        if not candidates:
+            break
+        # Build the next encoded transaction table from prior candidate memberships.
+        next_cbar = []
+        counts = Counter()
+        for present in cbar:
+            present_items = set().union(*present) if present else set()
+             matched = {cand for cand in candidates if cand.issubset(present_items)}
+            next_cbar.append(matched)
+            counts.update(matched)
+        level = {itemset: count / n for itemset, count in counts.items()
+                 if count / n >= min_support}
+        all_frequent.update(level)
+        # Retain only frequent itemsets for the next level.
+        cbar = [{x for x in row if x in level} for row in next_cbar]
+        k += 1
+    return all_frequent
