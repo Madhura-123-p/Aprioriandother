@@ -1,0 +1,41 @@
+BENCHMARK_SIZES = [10_000, 25_000, 50_000]  # Add 100_000 for the full PPT scale
+REPEATS = 3  # Use 5 for the final report
+MIN_SUPPORT_BENCH = 0.02
+
+def measure(func, transactions, min_support):
+    tracemalloc.start()
+    start = time.perf_counter()
+    result = func(transactions, min_support)
+    elapsed = time.perf_counter() - start
+    _, peak_bytes = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    return elapsed, peak_bytes / (1024 ** 2), result
+
+rows = []
+for n in BENCHMARK_SIZES:
+    tx = generate_transactions(n, seed=SEED)
+    for algo_name, algo in [("Apriori", apriori_custom),
+                            ("AprioriTid", aprioritid_custom)]:
+        times, peaks = [], []
+        reference = None
+        for rep in range(REPEATS):
+            elapsed, peak_mb, result = measure(algo, tx, MIN_SUPPORT_BENCH)
+            times.append(elapsed)
+            peaks.append(peak_mb)
+            if reference is None:
+                reference = result
+            else:
+                assert result.keys() == reference.keys()
+                assert all(abs(result[k] - reference[k]) < 1e-12 for k in result)
+        rows.append({
+            "transactions": n, "algorithm": algo_name,
+            "min_support": MIN_SUPPORT_BENCH, "repeats": REPEATS,
+            "mean_runtime_seconds": statistics.mean(times),
+            "stdev_runtime_seconds": statistics.stdev(times) if len(times) > 1 else 0.0,
+            "mean_python_peak_memory_mb": statistics.mean(peaks),
+            "frequent_itemset_count": len(reference),
+            "correctness_checked": True
+        })
+
+results = pd.DataFrame(rows)
+results

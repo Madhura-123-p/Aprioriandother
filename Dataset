@@ -1,0 +1,20 @@
+def generate_transactions(n_transactions, n_items=ITEM_CATALOG_SIZE,
+                        avg_len=AVG_BASKET_LENGTH, seed=SEED):
+    rng = np.random.default_rng(seed + n_transactions)
+    item_ids = np.arange(n_items)
+    # Popularity-skewed distribution; normalize to probabilities.
+    weights = 1 / np.power(item_ids + 1, 1.15)
+    probs = weights / weights.sum()
+    transactions = []
+    for _ in range(n_transactions):
+        length = int(max(1, rng.poisson(avg_len)))
+        length = min(length, n_items)
+        basket = rng.choice(item_ids, size=length, replace=False, p=probs)
+        transactions.append(frozenset(map(int, basket)))
+    return transactions
+
+sample = generate_transactions(1000)
+print("Transactions:", len(sample))
+print("Catalogue size:", ITEM_CATALOG_SIZE)
+print("Average basket length:", round(np.mean([len(t) for t in sample]), 2))
+print("First 3 baskets:", [sorted(t)[:10] for t in sample[:3]])

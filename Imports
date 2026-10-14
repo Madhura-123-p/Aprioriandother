@@ -1,0 +1,22 @@
+import itertools
+import random
+import time
+import tracemalloc
+import platform
+import statistics
+from collections import Counter
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+SEED = 42
+MIN_SUPPORT = 0.02
+ITEM_CATALOG_SIZE = 1000
+AVG_BASKET_LENGTH = 8
+random.seed(SEED)
+np.random.seed(SEED)
+
+print("Python:", platform.python_version())
+print("Platform:", platform.platform())
+print("Seed:", SEED)
+print("Minimum support:", MIN_SUPPORT)

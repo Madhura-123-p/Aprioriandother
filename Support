@@ -1,0 +1,13 @@
+SUPPORT_THRESHOLDS = [0.01, 0.02, 0.05, 0.10]
+SUPPORT_N = 10_000
+tx_support = generate_transactions(SUPPORT_N, seed=SEED)
+support_rows = []
+for support in SUPPORT_THRESHOLDS:
+    for name, algo in [("Apriori", apriori_custom), ("AprioriTid", aprioritid_custom)]:
+        elapsed, peak_mb, found = measure(algo, tx_support, support)
+        support_rows.append({"min_support": support, "algorithm": name,
+                             "runtime_seconds": elapsed,
+                             "python_peak_memory_mb": peak_mb,
+                             "frequent_itemset_count": len(found)})
+support_results = pd.DataFrame(support_rows)
+support_results
